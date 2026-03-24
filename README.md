@@ -91,24 +91,8 @@ npx http-server
 
 ## Deployment
 
-This is a static frontend project and can be deployed on:
+This is project is deployed at- https://text-split.netlify.app/
 
-- GitHub Pages  
-- Netlify  
-- Vercel  
-
-No build step required.
-
----
-
-## Extending the Project
-
-To add a new splitter:
-1. Create a class extending the base splitter  
-2. Implement the `split()` method  
-3. Register it in the application  
-
----
 
 ## License
 
