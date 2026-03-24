@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Visualize how different text splitting strategies chunk your input text">
+  <title>ChunkSplit</title>
+
+  <!-- Fonts - IBM Plex Mono + Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/chunks.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1 class="app-title">[CHUNK/SPLIT]</h1>
+        <p class="app-version">v1.0</p>
+      </div>
+      <div class="header-right">
+        <button id="theme-toggle" class="theme-toggle" title="Toggle theme">
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application -->
+  <main class="app-main">
+    <!-- Left Sidebar - Controls -->
+    <aside class="controls-panel">
+      <!-- Input Section -->
+      <section class="control-section">
+        <h2 class="section-title">// INPUT</h2>
+
+        <textarea
+          id="text-input"
+          class="text-input"
+          placeholder="Paste your text here or upload a file..."
+          rows="8"
+        ></textarea>
+
+        <!-- Live counter -->
+        <div class="input-counter" id="input-counter">
+          <span id="counter-chars">0 chars</span>
+          <span class="counter-sep">·</span>
+          <span id="counter-words">0 words</span>
+          <span class="counter-sep">·</span>
+          <span id="counter-tokens">~0 tokens</span>
+        </div>
+
+        <!-- Drag & drop + file upload -->
+        <div class="file-upload-wrapper" id="drop-zone">
+          <input
+            type="file"
+            id="file-upload"
+            class="file-upload-input"
+            accept=".txt,.md,.py,.js,.cpp,.html,.tex,.c,.h,.css,.json"
+          >
+          <label for="file-upload" class="file-upload-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>UPLOAD FILE <span class="drop-hint">or drag & drop</span></span>
+          </label>
+          <span id="file-name" class="file-name"></span>
+        </div>
+
+        <!-- URL fetch -->
+        <div class="url-fetch-wrapper">
+          <div class="url-fetch-row">
+            <input type="url" id="url-input" class="url-input" placeholder="https://… paste URL to fetch text" />
+            <button id="url-fetch-btn" class="url-fetch-btn" title="Fetch text from URL">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+              FETCH
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="language-select" class="form-label">LANGUAGE</label>
+          <select id="language-select" class="form-select">
+            <option value="plaintext">Plain Text</option>
+            <option value="python">Python</option>
+            <option value="javascript">JavaScript</option>
+            <option value="cpp">C/C++</option>
+            <option value="markdown">Markdown</option>
+            <option value="html">HTML</option>
+            <option value="latex">LaTeX</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Splitter Selection -->
+      <section class="control-section">
+        <h2 class="section-title">// SPLITTER</h2>
+
+        <div class="form-group">
+          <select id="splitter-select" class="form-select">
+            <option value="character">Character</option>
+            <option value="token">Token</option>
+            <option value="sentence">Sentence</option>
+            <option value="recursive">Recursive</option>
+          </select>
+          <p id="splitter-description" class="splitter-description">
+            Fixed-size character chunks with configurable overlap
+          </p>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section class="control-section">
+        <h2 class="section-title">// CONFIG</h2>
+
+        <div class="form-group">
+          <div class="slider-header">
+            <label for="chunk-size" class="form-label">CHUNK SIZE</label>
+            <output id="chunk-size-output" class="slider-output">500</output>
+          </div>
+          <input
+            type="range"
+            id="chunk-size"
+            class="slider"
+            min="50"
+            max="5000"
+            value="500"
+            step="50"
+          >
+          <div class="slider-labels">
+            <span>50</span>
+            <span>5000</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="slider-header">
+            <label for="overlap" class="form-label">OVERLAP</label>
+            <output id="overlap-output" class="slider-output">50</output>
+          </div>
+          <input
+            type="range"
+            id="overlap"
+            class="slider"
+            min="0"
+            max="500"
+            value="50"
+            step="10"
+          >
+          <div class="slider-labels">
+            <span>0</span>
+            <span id="overlap-max">500</span>
+          </div>
+          <p id="overlap-warning" class="warning-text hidden">
+            Overlap should be less than chunk size
+          </p>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="show-overlap" class="checkbox">
+            <span class="checkbox-custom"></span>
+            <span>Show overlap regions</span>
+          </label>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="comparison-mode" class="checkbox">
+            <span class="checkbox-custom"></span>
+            <span>Comparison mode</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Action Buttons -->
+      <section class="control-section">
+        <button id="split-btn" class="btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="2" x2="12" y2="22"></line>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+          </svg>
+          SPLIT TEXT
+          <kbd class="shortcut">Ctrl+Enter</kbd>
+        </button>
+
+        <div class="button-row">
+          <button id="export-json-btn" class="btn-secondary" disabled title="Download JSON">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            JSON
+          </button>
+          <button id="export-txt-btn" class="btn-secondary" disabled title="Download TXT">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            TXT
+          </button>
+          <button id="export-csv-btn" class="btn-secondary" disabled title="Download CSV">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+            CSV
+          </button>
+          <button id="copy-array-btn" class="btn-secondary" disabled title="Copy as JS array">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            [ ]
+          </button>
+        </div>
+      </section>
+
+      <!-- Quick Load Samples -->
+      <section class="control-section">
+        <h2 class="section-title">// SAMPLES</h2>
+        <div class="sample-buttons">
+          <button class="sample-btn" data-sample="plain">[TXT] Plain Text</button>
+          <button class="sample-btn" data-sample="python">[PY] Python Code</button>
+          <button class="sample-btn" data-sample="markdown">[MD] Markdown</button>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Center - Visualization -->
+    <section class="visualization-panel">
+      <div class="panel-header">
+        <h2 class="section-title">// OUTPUT</h2>
+        <div class="view-controls">
+          <button id="toggle-compact" class="view-toggle-btn" title="Toggle compact view">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <button id="clear-btn" class="view-toggle-btn" title="Clear all">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Single Splitter View -->
+      <div id="single-view" class="chunk-viewport">
+        <div id="chunk-container" class="chunk-container">
+          <div class="empty-state">
+            <div class="empty-icon">[ ]</div>
+            <p class="empty-text">Enter text and click SPLIT TEXT to see chunks</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparison View -->
+      <div id="comparison-view" class="comparison-view hidden">
+        <!-- Stats banner -->
+        <div id="comparison-stats" class="comparison-stats hidden">
+          <div class="cmp-stat" id="cmp-stat-1"></div>
+          <div class="cmp-stat cmp-stat-delta" id="cmp-stat-delta"></div>
+          <div class="cmp-stat" id="cmp-stat-2"></div>
+        </div>
+        <div class="comparison-columns-wrap">
+        <div class="comparison-column" id="comparison-col-1">
+          <div class="comparison-header">
+            <span class="comparison-label">Splitter 1</span>
+            <select id="splitter-1-select" class="comparison-select">
+              <option value="character">Character</option>
+              <option value="token">Token</option>
+              <option value="sentence">Sentence</option>
+              <option value="recursive">Recursive</option>
+            </select>
+          </div>
+          <div class="comparison-chunks" id="chunks-1"></div>
+        </div>
+        <div class="comparison-column" id="comparison-col-2">
+          <div class="comparison-header">
+            <span class="comparison-label">Splitter 2</span>
+            <select id="splitter-2-select" class="comparison-select">
+              <option value="token">Token</option>
+              <option value="character">Character</option>
+              <option value="sentence">Sentence</option>
+              <option value="recursive">Recursive</option>
+            </select>
+          </div>
+          <div class="comparison-chunks" id="chunks-2"></div>
+        </div>
+        </div><!-- /.comparison-columns-wrap -->
+      </div>
+    </section>
+
+    <!-- Right Sidebar - Metrics -->
+    <aside class="metrics-panel">
+      <h2 class="section-title">// METRICS</h2>
+      <div id="metrics-container" class="metrics-container">
+        <div class="metric-card">
+          <div class="metric-label">Total Characters</div>
+          <div class="metric-value" id="metric-total-chars">0</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Number of Chunks</div>
+          <div class="metric-value" id="metric-num-chunks">0</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Avg Chunk Size</div>
+          <div class="metric-value" id="metric-avg-size">0</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Min / Max Size</div>
+          <div class="metric-value" id="metric-min-max">0 / 0</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Std Deviation</div>
+          <div class="metric-value" id="metric-std-dev">0</div>
+        </div>
+
+        <div class="metric-card hidden" id="metric-wordcount-card">
+          <div class="metric-label">Word Count</div>
+          <div class="metric-value" id="metric-word-count">0</div>
+        </div>
+
+        <div class="metric-card metric-card-info hidden" id="metric-tokens">
+          <div class="metric-label">Total Tokens</div>
+          <div class="metric-value" id="metric-token-count">0</div>
+        </div>
+
+        <div class="metric-card hidden" id="metric-dist-card">
+          <div class="metric-label">Size Distribution</div>
+          <div id="metric-distribution" class="dist-bars"></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <p>CHUNK/SPLIT // Text Splitter Visualizer</p>
+  </footer>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Main JavaScript Module -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
